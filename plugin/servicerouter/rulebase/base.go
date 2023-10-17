@@ -359,11 +359,17 @@ func (g *RuleBasedInstancesFilter) matchDstMetadata(routeInfo *servicerouter.Rou
 			// 首先如果元数据的value无法获取，直接匹配失败
 			return nil, false, "", nil
 		}
-		metaValues := svcCache.GetInstanceMetaValues(cls.Location, ruleMetaKey)
-		if len(metaValues) == 0 {
-			// 不匹配
-			return nil, false, "", nil
+
+		// 如果类型是不等于，那应该单独获取实例
+		var metaValues map[string]string
+		if ruleMetaValue.Type != apimodel.MatchString_NOT_EQUALS {
+			metaValues = svcCache.GetInstanceMetaValues(cls.Location, ruleMetaKey)
+			if len(metaValues) == 0 {
+				// 不匹配
+				return nil, false, "", nil
+			}
 		}
+
 		switch ruleMetaValue.Type {
 		case apimodel.MatchString_REGEX:
 			// 对于正则表达式，则可能匹配到多个value，
@@ -395,16 +401,27 @@ func (g *RuleBasedInstancesFilter) matchDstMetadata(routeInfo *servicerouter.Rou
 			if !hasMatchedValue {
 				return nil, false, "", nil
 			}
+
+		case apimodel.MatchString_NOT_EQUALS:
+			metaValues = svcCache.GetInstanceMetaValuesNotEqual(cls.Location, ruleMetaKey, ruleMetaValueStr)
+			if len(metaValues) == 0 {
+				return cls, false, "", nil
+			}
+			for k, v := range metaValues {
+				cls.RuleAddMetadata(ruleMetaKey, k, v)
+			}
+			metaChanged = true
+
 		// parameter、variable、text 的 exact 最终都是要精确匹配，只是匹配的值来源不同
 		default:
 			// 校验从上一个路由插件继承下来的规则是否符合该目标规则
 			if !validateInMetadata(ruleMetaKey, ruleMetaValue, ruleMetaValueStr, inCluster.Metadata, nil) {
 				return nil, false, "", nil
 			}
-			// 如果全匹配直接标记返回
 			if ruleMetaValueStr == matchAll && ruleMetaValue.ValueType == apimodel.MatchString_TEXT {
-				metaChanged = true
-			} else if composedValue, ok := metaValues[ruleMetaValueStr]; ok {
+				return cls, true, "", nil
+			}
+			if composedValue, ok := metaValues[ruleMetaValueStr]; ok {
 				if cls.RuleAddMetadata(ruleMetaKey, ruleMetaValueStr, composedValue) {
 					metaChanged = true
 				}
@@ -604,7 +621,7 @@ func (g *RuleBasedInstancesFilter) getRuleFilteredInstances(ruleMatchType int, r
 	}
 	for _, route := range routes {
 		// 匹配source规则
-		sourceMatched, match, notMatches, invalidRegex := g.matchSource(route.Sources, routeInfo, ruleMatchType, ruleCache)
+		sourceMatched, match, notMatches, invalidRegex := g.matchSource(route.GetSources(), routeInfo, ruleMatchType, ruleCache)
 
 		if invalidRegex != nil {
 			// summary.invalidRegexSources = append(summary.invalidRegexSources, invalidRegex.invalidRegexes...)
