@@ -402,7 +402,7 @@ func (g *RuleBasedInstancesFilter) matchDstMetadata(routeInfo *servicerouter.Rou
 				return nil, false, "", nil
 			}
 			// 如果全匹配直接标记返回
-			if ruleMetaValueStr == matchAll && ruleMetaValue.Type == apimodel.MatchString_EXACT {
+			if ruleMetaValueStr == matchAll && ruleMetaValue.ValueType == apimodel.MatchString_TEXT {
 				metaChanged = true
 			} else if composedValue, ok := metaValues[ruleMetaValueStr]; ok {
 				if cls.RuleAddMetadata(ruleMetaKey, ruleMetaValueStr, composedValue) {
