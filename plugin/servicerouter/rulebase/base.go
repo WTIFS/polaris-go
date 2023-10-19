@@ -405,7 +405,7 @@ func (g *RuleBasedInstancesFilter) matchDstMetadata(routeInfo *servicerouter.Rou
 			}
 
 		case apimodel.MatchString_NOT_EQUALS:
-			metaValues = svcCache.GetInstanceMetaValuesNotEqual(cls.Location, ruleMetaKey, ruleMetaValueStr)
+			metaValues = svcCache.GetInstancesWithMetaValuesNotEqual(cls.Location, ruleMetaKey, ruleMetaValueStr)
 			if len(metaValues) == 0 {
 				return cls, false, "", nil
 			}
