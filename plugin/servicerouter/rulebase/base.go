@@ -453,16 +453,18 @@ func (g *RuleBasedInstancesFilter) getRuleMetaValueStr(routeInfo *servicerouter.
 		if len(srcMeta) == 0 {
 			exist = false
 		} else {
-			if !dst {
-				processedRuleMetaValue, exist = srcMeta[ruleMetaKey]
-				if exist {
-					g.valueCtx.SetValue(ruleMetaKey, processedRuleMetaValue)
-				}
-			} else {
+			// dst 获取需要从上下文中获取请求值
+			// srouce 作为变量识别src标签值，并将值写入上下文
+			if dst {
 				str, ok := g.valueCtx.GetValue(ruleMetaValue.GetValue().GetValue())
 				if ok {
 					processedRuleMetaValue = str.(string)
 					exist = true
+				}
+			} else {
+				processedRuleMetaValue, exist = srcMeta[ruleMetaKey]
+				if exist {
+					g.valueCtx.SetValue(ruleMetaKey, processedRuleMetaValue)
 				}
 			}
 		}
