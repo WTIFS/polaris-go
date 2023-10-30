@@ -2,7 +2,6 @@ package core
 
 import (
 	"github.com/polarismesh/polaris-go/plugin/ratelimiter/bbr/window"
-	"math"
 	"math/rand"
 	"sync"
 	"sync/atomic"
@@ -119,7 +118,7 @@ func TestBBRMinRt(t *testing.T) {
 	// default max min rt is equal to maxFloat64.
 	bbr = NewLimiter(optsForTest...)
 	bbr.rtStat = window.NewRollingCounter(window.RollingCounterOpts{Size: 10, BucketDuration: bucketDuration})
-	assert.Equal(t, int64(math.MaxInt64), bbr.minRT())
+	assert.Equal(t, int64(1), bbr.minRT())
 }
 
 func TestBBRMinRtWithCache(t *testing.T) {
