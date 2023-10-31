@@ -741,6 +741,7 @@ type ServiceClusters interface {
 type LocationBasedMetaKey struct {
 	location Location
 	metaKey  string
+	keyType  int // 0: equal, 1: not equal
 }
 
 // metaDataInService 标签缓存信息
@@ -939,7 +940,7 @@ func (c *clusterCache) GetInstanceMetaValues(location Location, metaKey string) 
 func (c *clusterCache) GetInstancesWithMetaValuesNotEqual(location Location, metaKey string, metavalue string) map[string]string {
 	var value interface{}
 	var exists bool
-	locationKey := LocationBasedMetaKey{location: location, metaKey: metaKey}
+	locationKey := LocationBasedMetaKey{location: location, metaKey: metaKey, keyType: 1}
 	value, exists = c.svcLevelMetadata.metaDataSet.Load(locationKey)
 	if exists {
 		return value.(map[string]string)
