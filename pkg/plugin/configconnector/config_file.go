@@ -22,6 +22,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"strconv"
+
+	"github.com/polarismesh/specification/source/go/api/v1/config_manage"
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/polarismesh/polaris-go/pkg/model"
 )
 
 const (
@@ -44,7 +49,6 @@ type ConfigFile struct {
 	Encrypted     bool
 	PublicKey     string
 	Tags          []*ConfigFileTag
-
 	// 实际暴露给应用的配置内容数据
 	content string
 	// 该配置文件是否为不存在的场景下的占位信息
@@ -136,4 +140,21 @@ func (c *ConfigFile) GetEncryptAlgo() string {
 		}
 	}
 	return ""
+}
+
+type ConfigGroup struct {
+	Namespace    string
+	Group        string
+	Revision     string
+	ReleaseFiles []*model.SimpleConfigFile
+}
+
+func (c *ConfigGroup) ToSpecQuery() *config_manage.ConfigFileGroupRequest {
+	return &config_manage.ConfigFileGroupRequest{
+		Revision: wrapperspb.String(c.Revision),
+		ConfigFileGroup: &config_manage.ConfigFileGroup{
+			Name:      wrapperspb.String(c.Group),
+			Namespace: wrapperspb.String(c.Namespace),
+		},
+	}
 }
