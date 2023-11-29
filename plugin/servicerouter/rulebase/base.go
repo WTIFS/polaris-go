@@ -453,7 +453,7 @@ func (g *RuleBasedInstancesFilter) getRuleMetaValueStr(routeInfo *servicerouter.
 		} else {
 			// 如果是参数类型，并且当前是针对 Source 方向的标签匹配，默认直接放通
 			exist = true
-			processedRuleMetaValue = matchAll
+			processedRuleMetaValue = srcMeta[ruleMetaKey]
 		}
 	case apimodel.MatchString_VARIABLE:
 		processedRuleMetaValue, exist = g.getVariable(ruleMetaValue.GetValue().GetValue())
