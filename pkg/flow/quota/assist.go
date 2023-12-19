@@ -256,6 +256,7 @@ func (f *FlowQuotaAssistant) GetQuota(commonRequest *data.CommonRateLimitRequest
 		return model.QuotaFutureWithResponse(resp), nil
 	}
 	var maxWaitMs int64 = 0
+	// releaseFuncs release 方法列表。如果有多个 window，用这个列表收集所有 window 的 release 方法
 	var releaseFuncs = make([]model.ReleaseFunc, 0, len(windows))
 	for _, window := range windows {
 		window.Init()
@@ -263,6 +264,7 @@ func (f *FlowQuotaAssistant) GetQuota(commonRequest *data.CommonRateLimitRequest
 		if quotaResult == nil {
 			continue
 		}
+		// 收集所有 window 的 release 方法
 		for _, releaseFunc := range quotaResult.ReleaseFuncs {
 			if releaseFunc != nil {
 				releaseFuncs = append(releaseFuncs, releaseFunc)
