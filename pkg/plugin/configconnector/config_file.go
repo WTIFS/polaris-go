@@ -18,6 +18,17 @@
 
 package configconnector
 
+import (
+	"bytes"
+	"encoding/json"
+	"strconv"
+
+	"github.com/polarismesh/specification/source/go/api/v1/config_manage"
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/polarismesh/polaris-go/pkg/model"
+)
+
 const (
 	// ConfigFileTagKeyUseEncrypted 配置加密开关标识，value 为 boolean
 	ConfigFileTagKeyUseEncrypted = "internal-encrypted"
@@ -29,20 +40,45 @@ const (
 
 // ConfigFile 配置文件
 type ConfigFile struct {
-	Namespace string
-	FileGroup string
-	FileName  string
-	Content   string
-	Version   uint64
-	Md5       string
-	Encrypted bool
-	PublicKey string
-	Tags      []*ConfigFileTag
+	Namespace     string
+	FileGroup     string
+	FileName      string
+	SourceContent string
+	Version       uint64
+	Md5           string
+	Encrypted     bool
+	PublicKey     string
+	Tags          []*ConfigFileTag
+	// 实际暴露给应用的配置内容数据
+	content string
+	// 该配置文件是否为不存在的场景下的占位信息
+	NotExist bool
+}
+
+func (c *ConfigFile) String() string {
+	var bf bytes.Buffer
+	_, _ = bf.WriteString("namespace=" + c.Namespace)
+	_, _ = bf.WriteString("group=" + c.FileGroup)
+	_, _ = bf.WriteString("file_name=" + c.FileName)
+	_, _ = bf.WriteString("version=" + strconv.FormatUint(c.Version, 10))
+	_, _ = bf.WriteString("encrypt=" + strconv.FormatBool(c.Encrypted))
+	//nolint: errchkjson
+	data, _ := json.Marshal(c.Tags)
+	_, _ = bf.WriteString("tags=" + string(data))
+	return bf.String()
 }
 
 type ConfigFileTag struct {
 	Key   string
 	Value string
+}
+
+func (c *ConfigFile) GetLabels() map[string]string {
+	ret := make(map[string]string, len(c.Tags))
+	for i := range c.Tags {
+		ret[c.Tags[i].Key] = c.Tags[i].Value
+	}
+	return ret
 }
 
 // GetNamespace 获取配置文件命名空间
@@ -60,9 +96,18 @@ func (c *ConfigFile) GetFileName() string {
 	return c.FileName
 }
 
+// GetSourceContent 获取配置文件内容
+func (c *ConfigFile) GetSourceContent() string {
+	return c.SourceContent
+}
+
+func (c *ConfigFile) SetContent(v string) {
+	c.content = v
+}
+
 // GetContent 获取配置文件内容
 func (c *ConfigFile) GetContent() string {
-	return c.Content
+	return c.content
 }
 
 // GetVersion 获取配置文件版本号
@@ -103,4 +148,21 @@ func (c *ConfigFile) GetEncryptAlgo() string {
 		}
 	}
 	return ""
+}
+
+type ConfigGroup struct {
+	Namespace    string
+	Group        string
+	Revision     string
+	ReleaseFiles []*model.SimpleConfigFile
+}
+
+func (c *ConfigGroup) ToSpecQuery() *config_manage.ConfigFileGroupRequest {
+	return &config_manage.ConfigFileGroupRequest{
+		Revision: wrapperspb.String(c.Revision),
+		ConfigFileGroup: &config_manage.ConfigFileGroup{
+			Name:      wrapperspb.String(c.Group),
+			Namespace: wrapperspb.String(c.Namespace),
+		},
+	}
 }

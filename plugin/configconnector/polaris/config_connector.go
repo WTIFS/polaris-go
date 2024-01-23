@@ -172,6 +172,157 @@ func (c *Connector) WatchConfigFiles(configFileList []*configconnector.ConfigFil
 	return c.handleResponse(request.String(), reqID, opKey, pbResp, err, conn, startTime)
 }
 
+// CreateConfigFile Create config file.
+func (c *Connector) CreateConfigFile(configFile *configconnector.ConfigFile) (*configconnector.ConfigFileResponse, error) {
+	var err error
+	if err = c.waitDiscoverReady(); err != nil {
+		return nil, err
+	}
+	opKey := connector.OpKeyCreateConfigFile
+	startTime := clock.GetClock().Now()
+	// 获取server连接
+	conn, err := c.connManager.GetConnection(opKey, config.ConfigCluster)
+	if err != nil {
+		return nil, connector.NetworkError(c.connManager, conn, int32(model.ErrCodeConnectError), err, startTime,
+			fmt.Sprintf("failed to get connection, opKey: %s", opKey))
+	}
+	// 释放server连接
+	defer conn.Release(opKey)
+	configClient := config_manage.NewPolarisConfigGRPCClient(network.ToGRPCConn(conn.Conn))
+	reqID := connector.NextCreateConfigFileReqID()
+	ctx, cancel := connector.CreateHeaderContextWithReqId(0, reqID)
+	if cancel != nil {
+		defer cancel()
+	}
+	// 打印请求报文
+	pbConfigFile := transferToConfigFile(configFile)
+	if log.GetBaseLogger().IsLevelEnabled(log.DebugLog) {
+		reqJson, _ := (&jsonpb.Marshaler{}).MarshalToString(pbConfigFile)
+		log.GetBaseLogger().Debugf("request to send is %s, opKey %s, connID %s", reqJson, opKey, conn.ConnID)
+	}
+	pbResp, err := configClient.CreateConfigFile(ctx, pbConfigFile)
+	return c.handleResponse(pbResp.String(), reqID, opKey, pbResp, err, conn, startTime)
+}
+
+// UpdateConfigFile Update Config file.
+func (c *Connector) UpdateConfigFile(configFile *configconnector.ConfigFile) (*configconnector.ConfigFileResponse, error) {
+	var err error
+	if err = c.waitDiscoverReady(); err != nil {
+		return nil, err
+	}
+	opKey := connector.OpKeyUpdateConfigFile
+	startTime := clock.GetClock().Now()
+	// 获取server连接
+	conn, err := c.connManager.GetConnection(opKey, config.ConfigCluster)
+	if err != nil {
+		return nil, connector.NetworkError(c.connManager, conn, int32(model.ErrCodeConnectError), err, startTime,
+			fmt.Sprintf("failed to get connection, opKey: %s", opKey))
+	}
+	// 释放server连接
+	defer conn.Release(opKey)
+	configClient := config_manage.NewPolarisConfigGRPCClient(network.ToGRPCConn(conn.Conn))
+	reqID := connector.NextUpdateConfigFileReqID()
+	ctx, cancel := connector.CreateHeaderContextWithReqId(0, reqID)
+	if cancel != nil {
+		defer cancel()
+	}
+	// 打印请求报文
+	pbConfigFile := transferToConfigFile(configFile)
+	if log.GetBaseLogger().IsLevelEnabled(log.DebugLog) {
+		reqJson, _ := (&jsonpb.Marshaler{}).MarshalToString(pbConfigFile)
+		log.GetBaseLogger().Debugf("request to send is %s, opKey %s, connID %s", reqJson, opKey, conn.ConnID)
+	}
+	pbResp, err := configClient.UpdateConfigFile(ctx, pbConfigFile)
+	return c.handleResponse(pbResp.String(), reqID, opKey, pbResp, err, conn, startTime)
+}
+
+// PublishConfigFile Publish Config file.
+func (c *Connector) PublishConfigFile(configFile *configconnector.ConfigFile) (*configconnector.ConfigFileResponse, error) {
+	var err error
+	if err = c.waitDiscoverReady(); err != nil {
+		return nil, err
+	}
+	opKey := connector.OpKeyPublishConfigFile
+	startTime := clock.GetClock().Now()
+	// 获取server连接
+	conn, err := c.connManager.GetConnection(opKey, config.ConfigCluster)
+	if err != nil {
+		return nil, connector.NetworkError(c.connManager, conn, int32(model.ErrCodeConnectError), err, startTime,
+			fmt.Sprintf("failed to get connection, opKey: %s", opKey))
+	}
+	// 释放server连接
+	defer conn.Release(opKey)
+	configClient := config_manage.NewPolarisConfigGRPCClient(network.ToGRPCConn(conn.Conn))
+	reqID := connector.NextPublishConfigFileReqID()
+	ctx, cancel := connector.CreateHeaderContextWithReqId(0, reqID)
+	if cancel != nil {
+		defer cancel()
+	}
+	// 打印请求报文
+	pbConfigFileRelease := transferToConfigFileRelease(configFile)
+	if log.GetBaseLogger().IsLevelEnabled(log.DebugLog) {
+		reqJson, _ := (&jsonpb.Marshaler{}).MarshalToString(pbConfigFileRelease)
+		log.GetBaseLogger().Debugf("request to send is %s, opKey %s, connID %s", reqJson, opKey, conn.ConnID)
+	}
+	pbResp, err := configClient.PublishConfigFile(ctx, pbConfigFileRelease)
+	return c.handleResponse(pbResp.String(), reqID, opKey, pbResp, err, conn, startTime)
+}
+
+func (c *Connector) GetConfigGroup(req *configconnector.ConfigGroup) (*configconnector.ConfigGroupResponse, error) {
+	var err error
+	if err = c.waitDiscoverReady(); err != nil {
+		return nil, err
+	}
+	opKey := connector.OpKeyGetConfigGroup
+	startTime := clock.GetClock().Now()
+	// 获取server连接
+	conn, err := c.connManager.GetConnection(opKey, config.ConfigCluster)
+	if err != nil {
+		return nil, connector.NetworkError(c.connManager, conn, int32(model.ErrCodeConnectError), err, startTime,
+			fmt.Sprintf("failed to get connection, opKey: %s", opKey))
+	}
+
+	reqID := connector.NextPublishConfigFileReqID()
+	ctx, cancel := connector.CreateHeaderContextWithReqId(0, reqID)
+	if cancel != nil {
+		defer cancel()
+	}
+
+	// 释放server连接
+	defer conn.Release(opKey)
+	stub := config_manage.NewPolarisConfigGRPCClient(network.ToGRPCConn(conn.Conn))
+	request := req.ToSpecQuery()
+	response, err := stub.GetConfigFileMetadataList(ctx, request)
+	endTime := clock.GetClock().Now()
+	if err != nil {
+		return nil, connector.NetworkError(c.connManager, conn, int32(model.ErrorCodeRpcError), err, startTime,
+			fmt.Sprintf("fail to %s, request %s, "+
+				"reason is fail to send request, reqID %s, server %s", opKey, request, reqID, conn.ConnID))
+	}
+	// 打印应答报文
+	if log.GetBaseLogger().IsLevelEnabled(log.DebugLog) {
+		respJson, _ := (&jsonpb.Marshaler{}).MarshalToString(response)
+		log.GetBaseLogger().Debugf("response recv is %s, opKey %s, connID %s", respJson, opKey, conn.ConnID)
+	}
+	serverCodeType := pb.ConvertServerErrorToRpcError(response.GetCode().GetValue())
+	code := apimodel.Code(response.GetCode().GetValue())
+	// 预期code，正常响应
+	if code == apimodel.Code_ExecuteSuccess || code == apimodel.Code_NotFoundResource || code == apimodel.Code_DataNoChange {
+		c.connManager.ReportSuccess(conn.ConnID, int32(serverCodeType), endTime.Sub(startTime))
+		groupResp := &configconnector.ConfigGroupResponse{}
+		if err := groupResp.ParseFromSpec(response); err != nil {
+			return nil, model.NewSDKError(model.ErrCodeServerException, nil, err.Error())
+		}
+		return groupResp, nil
+	}
+	// 当server发生了内部错误时，上报调用服务失败
+	errMsg := fmt.Sprintf(
+		"fail to %s, request %s, server code %d, reason %s, server %s", opKey,
+		request, response.GetCode().GetValue(), response.GetInfo().GetValue(), conn.ConnID)
+	c.connManager.ReportFail(conn.ConnID, int32(model.ErrCodeServerError), endTime.Sub(startTime))
+	return nil, model.NewSDKError(model.ErrCodeServerException, nil, errMsg)
+}
+
 // IsEnable .插件开关.
 func (c *Connector) IsEnable(cfg config.Configuration) bool {
 	return cfg.GetGlobal().GetSystem().GetMode() != model.ModeWithAgent
@@ -234,12 +385,20 @@ func (c *Connector) handleResponse(request string, reqID string, opKey string, r
 }
 
 func transferToClientConfigFileInfo(configFile *configconnector.ConfigFile) *config_manage.ClientConfigFileInfo {
+	tags := make([]*config_manage.ConfigFileTag, 0, len(configFile.GetLabels()))
+	for key, val := range configFile.GetLabels() {
+		tags = append(tags, &config_manage.ConfigFileTag{
+			Key:   wrapperspb.String(key),
+			Value: wrapperspb.String(val),
+		})
+	}
 	return &config_manage.ClientConfigFileInfo{
 		Namespace: wrapperspb.String(configFile.Namespace),
 		Group:     wrapperspb.String(configFile.GetFileGroup()),
 		FileName:  wrapperspb.String(configFile.GetFileName()),
 		Version:   wrapperspb.UInt64(configFile.GetVersion()),
 		PublicKey: wrapperspb.String(configFile.GetPublicKey()),
+		Tags:      tags,
 	}
 }
 
@@ -252,14 +411,31 @@ func transferFromClientConfigFileInfo(configFileInfo *config_manage.ClientConfig
 		})
 	}
 	return &configconnector.ConfigFile{
-		Namespace: configFileInfo.GetNamespace().GetValue(),
-		FileGroup: configFileInfo.GetGroup().GetValue(),
-		FileName:  configFileInfo.GetFileName().GetValue(),
-		Content:   configFileInfo.GetContent().GetValue(),
-		Version:   configFileInfo.GetVersion().GetValue(),
-		Md5:       configFileInfo.GetMd5().GetValue(),
-		Encrypted: configFileInfo.GetEncrypted().GetValue(),
-		Tags:      tags,
+		Namespace:     configFileInfo.GetNamespace().GetValue(),
+		FileGroup:     configFileInfo.GetGroup().GetValue(),
+		FileName:      configFileInfo.GetFileName().GetValue(),
+		SourceContent: configFileInfo.GetContent().GetValue(),
+		Version:       configFileInfo.GetVersion().GetValue(),
+		Md5:           configFileInfo.GetMd5().GetValue(),
+		Encrypted:     configFileInfo.GetEncrypted().GetValue(),
+		Tags:          tags,
+	}
+}
+
+func transferToConfigFile(configFile *configconnector.ConfigFile) *config_manage.ConfigFile {
+	return &config_manage.ConfigFile{
+		Namespace: wrapperspb.String(configFile.GetNamespace()),
+		Group:     wrapperspb.String(configFile.GetFileGroup()),
+		Name:      wrapperspb.String(configFile.GetFileName()),
+		Content:   wrapperspb.String(configFile.GetContent()),
+	}
+}
+
+func transferToConfigFileRelease(configFile *configconnector.ConfigFile) *config_manage.ConfigFileRelease {
+	return &config_manage.ConfigFileRelease{
+		Namespace: wrapperspb.String(configFile.GetNamespace()),
+		Group:     wrapperspb.String(configFile.GetFileGroup()),
+		FileName:  wrapperspb.String(configFile.GetFileName()),
 	}
 }
 

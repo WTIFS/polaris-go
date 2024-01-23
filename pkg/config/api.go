@@ -44,6 +44,8 @@ type GlobalConfig interface {
 	GetStatReporter() StatReporterConfig
 	// GetLocation global.location前缀开头的所有配置项
 	GetLocation() LocationConfig
+	// GetClient global.client前缀开头的所有配置项
+	GetClient() ClientConfig
 }
 
 // ConsumerConfig consumer config object.
@@ -85,6 +87,8 @@ type ConfigFileConfig interface {
 	GetPropertiesValueCacheSize() int32
 	// GetPropertiesValueExpireTime 缓存的过期时间，默认为 60s
 	GetPropertiesValueExpireTime() int64
+	// GetLocalCache .
+	GetLocalCache() ConfigLocalCacheConfig
 }
 
 // RateLimitConfig 限流相关配置.
@@ -211,8 +215,16 @@ type LocationConfig interface {
 	BaseConfig
 	// GetProvider 获取地理位置的提供者插件名称
 	GetProviders() []*LocationProviderConfigImpl
-
+	// GetProvider 根据类型名称获取对应插件的配置内容信息
 	GetProvider(typ string) *LocationProviderConfigImpl
+}
+
+type ClientConfig interface {
+	BaseConfig
+	// GetId 获取客户端ID
+	GetId() string
+	// GetLabels 获取客户端标签
+	GetLabels() map[string]string
 }
 
 // ServerConnectorConfig 与名字服务服务端的连接配置.
@@ -399,32 +411,46 @@ type CircuitBreakerConfig interface {
 	// SetChain 设置熔断器插件链
 	SetChain([]string)
 	// GetCheckPeriod 熔断器定时检测时间
+	// Deprecated: 不在使用
 	GetCheckPeriod() time.Duration
 	// SetCheckPeriod 设置熔断器定时检测时间
+	// Deprecated: 不在使用
 	SetCheckPeriod(time.Duration)
 	// GetSleepWindow 获取熔断周期
+	// Deprecated: 不在使用
 	GetSleepWindow() time.Duration
 	// SetSleepWindow 设置熔断周期
+	// Deprecated: 不在使用
 	SetSleepWindow(interval time.Duration)
 	// GetRequestCountAfterHalfOpen 获取半开状态后最多分配多少个探测请求
+	// Deprecated: 不在使用
 	GetRequestCountAfterHalfOpen() int
 	// SetRequestCountAfterHalfOpen 设置半开状态后最多分配多少个探测请求
+	// Deprecated: 不在使用
 	SetRequestCountAfterHalfOpen(count int)
 	// GetSuccessCountAfterHalfOpen 获取半开状态后多少个成功请求则恢复
+	// Deprecated: 不在使用
 	GetSuccessCountAfterHalfOpen() int
 	// SetSuccessCountAfterHalfOpen 设置半开状态后多少个成功请求则恢复
+	// Deprecated: 不在使用
 	SetSuccessCountAfterHalfOpen(count int)
 	// GetRecoverWindow 获取半开后的恢复周期，按周期来进行半开放量的统计
+	// Deprecated: 不在使用
 	GetRecoverWindow() time.Duration
 	// SetRecoverWindow 设置半开后的恢复周期，按周期来进行半开放量的统计
+	// Deprecated: 不在使用
 	SetRecoverWindow(value time.Duration)
 	// GetRecoverNumBuckets 半开后请求数统计滑桶数量
+	// Deprecated: 不在使用
 	GetRecoverNumBuckets() int
 	// SetRecoverNumBuckets 设置半开后请求数统计滑桶数量
+	// Deprecated: 不在使用
 	SetRecoverNumBuckets(value int)
 	// GetErrorCountConfig 连续错误数熔断配置
+	// Deprecated: 不在使用
 	GetErrorCountConfig() ErrorCountConfig
 	// GetErrorRateConfig 错误率熔断配置
+	// Deprecated: 不在使用
 	GetErrorRateConfig() ErrorRateConfig
 }
 
@@ -486,6 +512,39 @@ type ServiceSpecificConfig interface {
 	GetServiceCircuitBreaker() CircuitBreakerConfig
 
 	GetServiceRouter() ServiceRouterConfig
+}
+
+type ConfigLocalCacheConfig interface {
+	BaseConfig
+	// IsPersistEnable consumer.localCache.persistEnable
+	// 是否启用本地缓存
+	IsPersistEnable() bool
+	// SetPersistEnable 设置是否启用本地缓存
+	SetPersistEnable(enable bool)
+	// GetPersistDir consumer.localCache.persistDir
+	// 本地缓存持久化路径
+	GetPersistDir() string
+	// SetPersistDir 设置本地缓存持久化路径
+	SetPersistDir(string)
+	// GetPersistMaxWriteRetry consumer.localCache.persistMaxWriteRetry
+	// 缓存最大写重试次数
+	GetPersistMaxWriteRetry() int
+	// SetPersistMaxWriteRetry 设置缓存最大写重试次数
+	SetPersistMaxWriteRetry(int)
+	// GetPersistMaxReadRetry consumer.localCache.persistMaxReadRetry
+	// 缓存最大读重试次数
+	GetPersistMaxReadRetry() int
+	// SetPersistMaxReadRetry 设置缓存最大读重试次数
+	SetPersistMaxReadRetry(int)
+	// GetPersistRetryInterval consumer.localCache.persistRetryInterval
+	// 缓存持久化重试间隔
+	GetPersistRetryInterval() time.Duration
+	// SetPersistRetryInterval 设置缓存持久化重试间隔
+	SetPersistRetryInterval(time.Duration)
+	// SetFallbackToLocalCache .
+	SetFallbackToLocalCache(enable bool)
+	// IsFallbackToLocalCache .
+	IsFallbackToLocalCache() bool
 }
 
 // ConfigConnectorConfig 配置中心连接相关的配置.
