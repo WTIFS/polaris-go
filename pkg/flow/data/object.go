@@ -214,6 +214,7 @@ func (c *CommonInstancesRequest) InitByGetOneRequest(request *model.GetOneInstan
 	c.FlowID = request.FlowID
 	c.DstService.Service = request.Service
 	c.DstService.Namespace = request.Namespace
+	c.DstService.Token = request.Token
 	c.RouteInfo.DestService = request
 	c.RouteInfo.IncludeCircuitBreakInstances = request.IncludeCircuitBreakInstances
 	c.RouteInfo.EnableFailOverDefaultMeta = request.EnableFailOverDefaultMeta
@@ -329,6 +330,7 @@ func (c *CommonInstancesRequest) InitByGetAllRequest(request *model.GetAllInstan
 	c.FlowID = request.FlowID
 	c.DstService.Service = request.Service
 	c.DstService.Namespace = request.Namespace
+	c.DstService.Token = request.Token
 	c.RouteInfo.DestService = request
 	c.response = request.GetResponse()
 	c.FetchAll = true

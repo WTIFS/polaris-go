@@ -293,16 +293,14 @@ func InitContextByConfig(cfg config.Configuration) (SDKContext, error) {
 	if err != nil {
 		finalErrs = multierror.Append(finalErrs, err)
 	}
-	text, terr := yaml.Marshal(cfg)
-	if terr != nil {
-		finalErrs = multierror.Append(finalErrs, model.NewSDKError(model.ErrCodeAPIInvalidConfig, terr,
-			"fail to marshal input config"))
-	}
-	log.GetBaseLogger().Infof("\n%s, -------Configuration with default value-------\n%s", token.UID, string(text))
+	//text, terr := yaml.Marshal(cfg)
+	//if terr != nil {
+	//	finalErrs = multierror.Append(finalErrs, model.NewSDKError(model.ErrCodeAPIInvalidConfig, terr,
+	//		"fail to marshal input config"))
+	//}
 	if finalErrs != nil {
 		return nil, finalErrs
 	}
-	log.GetBaseLogger().Infof("\n-------%s, All plugins and engine initialized successfully-------", token.UID)
 	// 启动所有插件
 	if err = plugManager.StartPlugins(); err != nil {
 		return nil, err
@@ -310,7 +308,6 @@ func InitContextByConfig(cfg config.Configuration) (SDKContext, error) {
 	if err = engine.Start(); err != nil {
 		return nil, err
 	}
-	log.GetBaseLogger().Infof("\n-------%s, All plugins and engine started successfully-------", token.UID)
 	ctx := &sdkContext{config: cfg, plugins: plugManager, engine: engine, valueContext: globalCtx}
 	if err = onContextInitialized(ctx); err != nil {
 		ctx.Destroy()

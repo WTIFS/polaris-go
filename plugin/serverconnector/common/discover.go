@@ -476,15 +476,13 @@ func (s *StreamingClient) checkErrorReport(grpcErr error, resp *apiservice.Disco
 
 // 使用streamClient进行收包，并更新服务信息
 func (s *StreamingClient) receiveAndNotify() {
-	log.GetNetworkLogger().Infof("%s, receiveAndNotify of streamingClient %s start to receive message",
-		s.connector.ServiceConnector.GetSDKContextID(), s.reqID)
+	fmt.Printf("[receiveAndNotify] %s, receiveAndNotify of streamingClient %s start to receive message", s.connector.ServiceConnector.GetSDKContextID(), s.reqID)
 	for {
 		resp, grpcErr := s.discoverClient.Recv()
+		fmt.Printf("[receiveAndNotify] resp: %v\n", resp)
 		s.lastRecvTime.Store(time.Now())
 		if nil != grpcErr {
-			log.GetNetworkLogger().Errorf("%s, receiveAndNotify: fail to receive message from connection %s,"+
-				" streamingClient %s, err %v",
-				s.connector.ServiceConnector.GetSDKContextID(), s.connection, s.reqID, grpcErr)
+			fmt.Printf("[receiveAndNotify] grpcErr: %s\n", grpcErr.Error())
 		}
 		report, code, discoverErr := s.checkErrorReport(grpcErr, resp)
 		// 处理与discover连接出现的问题
@@ -514,6 +512,7 @@ func (s *StreamingClient) receiveAndNotify() {
 			ServiceKey: model.ServiceKey{
 				Namespace: resp.GetService().GetNamespace().GetValue(),
 				Service:   resp.GetService().GetName().GetValue(),
+				Token:     resp.GetService().GetToken().GetValue(),
 			},
 			Type: pb.GetEventType(resp.Type),
 		}
@@ -857,15 +856,12 @@ func (s *serviceUpdateTask) toDiscoverRequest() *apiservice.DiscoverRequest {
 		Service: &apiservice.Service{
 			Name:      &wrappers.StringValue{Value: s.Service},
 			Namespace: &wrappers.StringValue{Value: s.Namespace},
+			Token:     &wrappers.StringValue{Value: s.Token},
 			Revision:  &wrappers.StringValue{Value: s.handler.GetRevision()},
 			Business:  &wrappers.StringValue{Value: s.handler.GetBusiness()},
 		},
 	}
-	if log.GetNetworkLogger().IsLevelEnabled(log.DebugLog) {
-		reqJSON, _ := (&jsonpb.Marshaler{}).MarshalToString(request)
-		log.GetNetworkLogger().Debugf(
-			"discover request to send is %s", reqJSON)
-	}
+	fmt.Printf("[discover request] service: is %s. type: %s\n", s.Service, s.Token)
 	return request
 }
 
@@ -880,6 +876,7 @@ func (g *DiscoverConnector) RegisterServiceHandler(svcEventHandler *serverconnec
 	}
 	updateTask.Service = svcEventHandler.Service
 	updateTask.Namespace = svcEventHandler.Namespace
+	updateTask.Token = svcEventHandler.Token
 	updateTask.Type = svcEventHandler.Type
 	// 增加随机秒数[0~3)，为了让更新不要聚集
 	mu.Lock()
@@ -914,6 +911,7 @@ func (g *DiscoverConnector) DeRegisterServiceHandler(key *model.ServiceEventKey)
 	updateTask := &serviceUpdateTask{}
 	updateTask.Service = key.Service
 	updateTask.Namespace = key.Namespace
+	updateTask.Token = key.Token
 	updateTask.Type = key.Type
 	task := &clientTask{
 		updateTask: updateTask,

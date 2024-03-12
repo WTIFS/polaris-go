@@ -509,7 +509,7 @@ func (g *LocalCache) newServiceCacheHandler() CacheHandlers {
 func (g *LocalCache) LoadInstances(svcKey *model.ServiceKey) (*common.Notifier, error) {
 	log.GetBaseLogger().Debugf("LoadInstances: %s", svcKey)
 	svcEvKey := &model.ServiceEventKey{
-		ServiceKey: model.ServiceKey{Service: svcKey.Service, Namespace: svcKey.Namespace},
+		ServiceKey: model.ServiceKey{Service: svcKey.Service, Namespace: svcKey.Namespace, Token: svcKey.Token},
 		Type:       model.EventInstances}
 	svcEvKey.Type = model.EventInstances
 	return g.loadRemoteValue(svcEvKey, g.eventToCacheHandlers[svcEvKey.Type])
@@ -993,6 +993,7 @@ func (g *LocalCache) LoadServiceRouteRule(key *model.ServiceKey) (*common.Notifi
 		ServiceKey: model.ServiceKey{
 			Namespace: key.Namespace,
 			Service:   key.Service,
+			Token:     key.Token,
 		},
 		Type: model.EventRouting,
 	})
@@ -1005,6 +1006,7 @@ func (g *LocalCache) LoadServices(key *model.ServiceKey) (*common.Notifier, erro
 		ServiceKey: model.ServiceKey{
 			Namespace: key.Namespace,
 			Service:   key.Service,
+			Token:     key.Token,
 		},
 		Type: model.EventServices,
 	})
@@ -1016,6 +1018,7 @@ func (g *LocalCache) LoadServiceRateLimitRule(key *model.ServiceKey) (*common.No
 		ServiceKey: model.ServiceKey{
 			Namespace: key.Namespace,
 			Service:   key.Service,
+			Token:     key.Token,
 		},
 		Type: model.EventRateLimiting,
 	})

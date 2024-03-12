@@ -45,7 +45,7 @@ func initArgs() {
 	flag.StringVar(&service, "service", "RouteEchoServer", "service")
 	flag.IntVar(&port, "port", 8888, "service port")
 	// 当北极星开启鉴权时，需要配置此参数完成相关的权限检查
-	flag.StringVar(&token, "token", "", "token")
+	flag.StringVar(&token, "token", "FPI+K9USIvHYU8JUljM3TqAg1Wizxta7i+WEi73RkDMQl1HhIBoIc+EKYinqiViTx7TJlBJSY2/R/tXfZkGv8mGB", "token")
 	flag.StringVar(&metadata, "metadata", "", "key1=value1&key2=value2")
 }
 

@@ -100,6 +100,8 @@ type ServiceKey struct {
 	Namespace string
 	// 服务名
 	Service string
+	// 服务 token
+	Token string
 }
 
 // String ToString方法
