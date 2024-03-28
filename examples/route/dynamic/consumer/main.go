@@ -93,6 +93,7 @@ func (svr *PolarisConsumer) runWebServer() {
 		getAllRequest := &polaris.GetAllInstancesRequest{}
 		getAllRequest.Namespace = namespace
 		getAllRequest.Service = service
+		getAllRequest.AuthToken = token
 		instancesResp, err := svr.consumer.GetAllInstances(getAllRequest)
 		if nil != err {
 			log.Printf("[error] fail to getAllInstances, err is %v", err)
@@ -177,6 +178,7 @@ func main() {
 	if nil != err {
 		log.Fatalf("fail to create sdk context, err is %v", err)
 	}
+
 	defer sdkCtx.Destroy()
 
 	svr := &PolarisConsumer{

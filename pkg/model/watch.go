@@ -94,6 +94,8 @@ type WatchAllInstancesRequest struct {
 	WaitTime time.Duration
 	// InstancesListener listener for service listeners
 	InstancesListener InstancesListener
+	// AuthToken
+	AuthToken string
 }
 
 func (req *WatchAllInstancesRequest) Validate() error {

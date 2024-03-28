@@ -811,6 +811,7 @@ var longRunMap = map[uint32]string{
 // serviceUpdateTask 服务更新任务
 type serviceUpdateTask struct {
 	model.ServiceEventKey
+	AuthToken string
 	// 标识已经在长期运行的任务
 	longRun        uint32
 	updateInterval time.Duration
@@ -866,6 +867,7 @@ func (s *serviceUpdateTask) toDiscoverRequest() *apiservice.DiscoverRequest {
 		Service: &apiservice.Service{
 			Name:      &wrappers.StringValue{Value: s.Service},
 			Namespace: &wrappers.StringValue{Value: s.Namespace},
+			Token:     &wrappers.StringValue{Value: s.AuthToken},
 			Revision:  &wrappers.StringValue{Value: s.handler.GetRevision()},
 			Business:  &wrappers.StringValue{Value: s.handler.GetBusiness()},
 		},
@@ -889,6 +891,7 @@ func (g *DiscoverConnector) RegisterServiceHandler(svcEventHandler *serverconnec
 	}
 	updateTask.Service = svcEventHandler.Service
 	updateTask.Namespace = svcEventHandler.Namespace
+	updateTask.AuthToken = svcEventHandler.AuthToken
 	updateTask.Type = svcEventHandler.Type
 	// 增加随机秒数[0~3)，为了让更新不要聚集
 	mu.Lock()

@@ -19,7 +19,10 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
+	"sync/atomic"
+	"time"
 
 	"github.com/polarismesh/polaris-go"
 	"github.com/polarismesh/polaris-go/pkg/model"
@@ -28,11 +31,14 @@ import (
 var (
 	namespace string
 	service   string
+	token     string
+	port      int32 = 10000
 )
 
 func initArgs() {
 	flag.StringVar(&namespace, "namespace", "default", "namespace")
-	flag.StringVar(&service, "service", "RouteEchoServer", "service")
+	flag.StringVar(&service, "service", "WatchInstanceServer", "service")
+	flag.StringVar(&token, "token", "", "token")
 }
 
 func main() {
@@ -49,14 +55,27 @@ func main() {
 	defer sdkCtx.Destroy()
 
 	consumer := polaris.NewConsumerAPIByContext(sdkCtx)
+	provider := polaris.NewProviderAPIByContext(sdkCtx)
 
-	log.Printf("begin watch instance change")
+	go func() {
+		for i := 0; i < 5; i++ {
+			addAndRemoveInstance(provider)
+		}
+	}()
+	go watchInstance(consumer)
+
+	time.Sleep(time.Second * 30)
+}
+
+// watchInstance 监听实例变化
+func watchInstance(consumer polaris.ConsumerAPI) {
 	resp, err := consumer.WatchService(&polaris.WatchServiceRequest{
 		WatchServiceRequest: model.WatchServiceRequest{
 			Key: model.ServiceKey{
 				Namespace: namespace,
 				Service:   service,
 			},
+			AuthToken: token,
 		},
 	})
 
@@ -64,16 +83,45 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Printf("receive instance list : %+v", resp.GetAllInstancesResp.GetInstances())
-
 	for event := range resp.EventChannel {
 		insEvent, ok := event.(*model.InstanceEvent)
 		if !ok {
 			continue
 		}
 
-		log.Printf("receive instance add event : %+v", insEvent.AddEvent)
-		log.Printf("receive instance update event : %+v", insEvent.UpdateEvent)
-		log.Printf("receive instance delete event : %+v", insEvent.DeleteEvent)
+		if insEvent.AddEvent != nil {
+			log.Printf("[consumer] receive instance add event : %+v", insEvent.AddEvent.Instances[0].GetInstanceKey())
+		}
+		if insEvent.DeleteEvent != nil {
+			log.Printf("[consumer] receive instance delete event : %+v", insEvent.DeleteEvent.Instances[0].GetInstanceKey())
+		}
+
 	}
+}
+
+// addAndRemoveInstance 注册实例并稍后注销实例
+func addAndRemoveInstance(provider polaris.ProviderAPI) {
+	registerRequest := &polaris.InstanceRegisterRequest{}
+	registerRequest.Service = service
+	registerRequest.Namespace = namespace
+	registerRequest.Host = "localhost"
+	registerRequest.Port = int(port)
+	registerRequest.InstanceId = fmt.Sprintf("localhost:%d", port)
+	atomic.AddInt32(&port, 1)
+	registerRequest.ServiceToken = token
+	resp, err := provider.Register(registerRequest)
+	if err != nil {
+		log.Fatalf("provider fail to register instance to service %s, err is %v", service, err)
+	}
+	log.Printf("register successfully: %s", resp.InstanceID)
+	time.Sleep(3 * time.Second)
+
+	deregisterRequest := &polaris.InstanceDeRegisterRequest{}
+	deregisterRequest.InstanceID = resp.InstanceID
+	deregisterRequest.ServiceToken = token
+	if err = provider.Deregister(deregisterRequest); err != nil {
+		log.Fatalf("fail to deregister instance to service %s, err is %v", service, err)
+	}
+	log.Printf("dereregister successfully: %s", resp.InstanceID)
+	time.Sleep(2 * time.Second)
 }

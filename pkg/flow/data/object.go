@@ -166,11 +166,17 @@ func (br *BaseRequest) SetServices(mc model.Services) {
 	// do nothing
 }
 
+// GetAuthToken 获取token
+func (br *BaseRequest) GetAuthToken() string {
+	return ""
+}
+
 // CommonInstancesRequest 通用请求对象，主要用于在消息过程减少GC
 type CommonInstancesRequest struct {
 	FlowID          uint64
 	DstService      model.ServiceKey
 	SrcService      model.ServiceKey
+	AuthToken       string
 	Trigger         model.NotifyTrigger
 	HasSrcService   bool
 	DoLoadBalance   bool
@@ -211,6 +217,7 @@ func (c *CommonInstancesRequest) clearValues(cfg config.Configuration) {
 // InitByGetOneRequest 通过获取单个请求初始化通用请求对象
 func (c *CommonInstancesRequest) InitByGetOneRequest(request *model.GetOneInstanceRequest, cfg config.Configuration) {
 	c.clearValues(cfg)
+	c.AuthToken = request.AuthToken
 	c.FlowID = request.FlowID
 	c.DstService.Service = request.Service
 	c.DstService.Namespace = request.Namespace
@@ -298,6 +305,7 @@ func (c *CommonInstancesRequest) InitByProcessRoutersRequest(
 // InitByGetMultiRequest 通过获取多个请求初始化通用请求对象
 func (c *CommonInstancesRequest) InitByGetMultiRequest(request *model.GetInstancesRequest, cfg config.Configuration) {
 	c.clearValues(cfg)
+	c.AuthToken = request.AuthToken
 	c.FlowID = request.FlowID
 	c.DstService.Service = request.Service
 	c.DstService.Namespace = request.Namespace
@@ -329,6 +337,7 @@ func (c *CommonInstancesRequest) InitByGetAllRequest(request *model.GetAllInstan
 	c.FlowID = request.FlowID
 	c.DstService.Service = request.Service
 	c.DstService.Namespace = request.Namespace
+	c.AuthToken = request.AuthToken
 	c.RouteInfo.DestService = request
 	c.response = request.GetResponse()
 	c.FetchAll = true
@@ -403,6 +412,11 @@ func (c *CommonInstancesRequest) GetControlParam() *model.ControlParam {
 // SetServices 设置网格规则
 func (c *CommonInstancesRequest) SetServices(mc model.Services) {
 	// do nothing
+}
+
+// GetAuthToken 获取token
+func (c *CommonInstancesRequest) GetAuthToken() string {
+	return c.AuthToken
 }
 
 // SingleInstancesOwner 获取单个实例数组的持有者
@@ -661,6 +675,11 @@ func (cl *CommonRateLimitRequest) GetControlParam() *model.ControlParam {
 // SetServices 设置网格规则
 func (cl *CommonRateLimitRequest) SetServices(mc model.Services) {
 	// do nothing
+}
+
+// GetToken 获取token
+func (cl *CommonRateLimitRequest) GetAuthToken() string {
+	return ""
 }
 
 // CommonServiceCallResultRequest 公共服务调用结果请求
